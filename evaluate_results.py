@@ -179,7 +179,7 @@ def main():
     score_files = {tuple(os.path.splitext(os.path.split(file)[-1])[0].split('_')): pd.read_parquet(file) for file in tqdm(glob(os.path.join("scores", "*.parquet")), desc='Loading Scores')}
 
     # load the groundtruth
-    gtdf = load_master_data(r".\has2023_master.csv.zip")
+    gtdf = load_master_data(r"has2023_master.csv.zip")
 
     # go through and reorder the files
     score_tmp = collections.defaultdict(dict)
