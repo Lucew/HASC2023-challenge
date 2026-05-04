@@ -35,7 +35,10 @@ def process_data(input_tuple: tuple[str, str, int, str, str]):
     signal = df.to_numpy()
 
     # transform the data
-    score = transformer.transform(signal)
+    try:
+        score = transformer.transform(signal)
+    except AssertionError:
+        return
 
     # save the score to disc
     score = pd.DataFrame(data=score, columns=["score"])
