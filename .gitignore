@@ -185,4 +185,4 @@ fabric.properties
 .pypirc
 
 .parquet
-.csv.zip
+.zip
