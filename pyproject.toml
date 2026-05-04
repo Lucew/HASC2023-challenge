@@ -1,0 +1,13 @@
+[project]
+name = "hasc2023-challenge"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy",
+    "pyarrow",
+    "pandas",
+    "threadpoolctl",
+    "tqdm",
+    "changepoynt@git+https://github.com/Lucew/changepoynt.git@multivariate"
+]
