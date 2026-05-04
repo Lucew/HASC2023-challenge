@@ -184,5 +184,5 @@ fabric.properties
 .idea
 .pypirc
 
-.parquet
-.zip
+*.parquet
+*.csv.zip
