@@ -30,6 +30,7 @@ def process_data(input_tuple: tuple[str, str, int, str, str]):
 
     # load the data from the memory
     df = pd.read_parquet(data_path)
+    df = df[['x-acc', 'y-acc', 'z-acc']]
 
     # transform to numpy
     signal = df.to_numpy()
