@@ -10,10 +10,10 @@ from claspy.segmentation import BinaryClaSPSegmentation
 
 
 @threadpoolctl.threadpool_limits.wrap(limits=1, user_api='blas')
-def process_data(input_tuple: tuple[str, str, int, str, str]):
+def process_data(input_tuple: tuple[str, str]):
 
     # unpack the input tuple
-    data_path, output_folder, window_size, algorithm, method = input_tuple
+    data_path, output_folder = input_tuple
 
     # get the signal name
     signal_name = os.path.splitext(os.path.split(data_path)[-1])[0]
