@@ -31,7 +31,7 @@ def process_data(input_tuple: tuple[str, str]):
 
     # save the score to disc
     score = pd.DataFrame(data=detections, columns=["detections"])
-    score.to_parquet(os.path.join(output_folder, f"{signal_name}_{window_size}_{algorithm}_{method}.parquet"))
+    score.to_parquet(os.path.join(output_folder, f"{signal_name}_clasp.parquet"))
 
 
 def main():
