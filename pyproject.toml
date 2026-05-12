@@ -9,5 +9,8 @@ dependencies = [
     "pandas",
     "threadpoolctl",
     "tqdm",
-    "changepoynt@git+https://github.com/Lucew/changepoynt.git@multivariate"
+    "changepoynt@git+https://github.com/Lucew/changepoynt.git@multivariate",
+    "streamlit",
+    "plotly",
+    "claspy"
 ]
