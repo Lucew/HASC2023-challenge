@@ -6,6 +6,7 @@ import collections
 from tqdm import tqdm
 import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.graph_objects as go
 
 import evaluate_results as er
@@ -39,10 +40,12 @@ def load_data(score_path: str = "scores"):
     # reorder the files into a dictionary
     tmp_score_files = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(dict)))
     for (idx, ws, algorithm, method), score in score_files.items():
+        # score[score > 0.99] = 1-score[score > 0.99]
         tmp_score_files[idx][algorithm][method][ws] = score
     score_files = transform_defauldict(tmp_score_files)
 
     # load the full file
+    print("Loading ground truth data")
     df = td.load_master_data('./has2023_master.csv.zip')
     return score_files, gtdf, df
 
@@ -170,6 +173,11 @@ def main():
 
 
     scores = score_dict[signal][algorithm][method][window_size]
+    if st.checkbox("Apply log10", value=False):
+        window_size = int(window_size)
+        offset = max(np.quantile(scores[int(1.5*window_size):-window_size*5//6], 0.1), 1e-20)
+        print(offset)
+        scores = (np.log10(scores + offset) - np.log10(offset)) / (np.log10(1 + offset) - np.log10(offset))
 
     print(ground_truth.iloc[int(signal), :]['change_points'])
     ground_truth = signal_df.iloc[int(signal), :]['change_points']
