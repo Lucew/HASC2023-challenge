@@ -9,8 +9,6 @@ import numpy as np
 import pandas as pd
 import scipy.signal as spsig
 
-import fuse_peaks as fp
-
 
 def true_positives(T, X, margin=5):
     """Compute true positives without double counting
