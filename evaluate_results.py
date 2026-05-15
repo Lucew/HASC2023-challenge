@@ -9,6 +9,8 @@ import numpy as np
 import pandas as pd
 import scipy.signal as spsig
 
+import fuse_peaks as fp
+
 
 def true_positives(T, X, margin=5):
     """Compute true positives without double counting
@@ -161,25 +163,34 @@ def load_master_data(data_path=r"C:\Users\lucas\Data\HAS2023-Challenge\has2023_m
     return df
 
 
+def iqr(asd):
+    return  np.percentile(asd, 75) - np.percentile(asd, 25)
+
+
 def detect_changepoints(df: pd.DataFrame, window_size: int):
 
     # get the score as numpy array
     score = df["score"].to_numpy()
+    score = score[int(1.5*window_size):-window_size*5//6]
     orig_score = score.copy()
-    score = (score-score.min()) / (score.max() - score.min())
+
+    # create a threshold as the standard deviation
+    strided_thresh = np.mean(score)
 
     # get the peaks
-    peaks, *_ = spsig.find_peaks(score, width=10, distance=100, prominence=0.35)
+    peaks, details = spsig.find_peaks(score, distance=window_size//2, width=window_size//3, prominence=strided_thresh, wlen=int(2*2.33*window_size))
+    # if prom >= np.median(np.concat((score[max(peak-2*window_size, 0):max(peak-window_size, 1)], score[peak+window_size:peak+2*window_size])))
+    peaks = [int(peak)+1.5*window_size - window_size//3 for peak, prom in zip(peaks, details['prominences'])]
     return peaks
 
 
 def main():
 
-    # load the score files
-    score_files = {tuple(os.path.splitext(os.path.split(file)[-1])[0].split('_')): pd.read_parquet(file) for file in tqdm(glob(os.path.join("scores", "*.parquet")), desc='Loading Scores')}
-
     # load the groundtruth
     gtdf = load_master_data(r"has2023_master.csv.zip")
+
+    # load the score files
+    score_files = {tuple(os.path.splitext(os.path.split(file)[-1])[0].split('_')): pd.read_parquet(file) for file in tqdm(glob(os.path.join("scores3", "*.parquet")), desc='Loading Scores')}
 
     # go through and reorder the files
     score_tmp = collections.defaultdict(dict)
@@ -193,31 +204,59 @@ def main():
     algorithm = "MSST"
     method = "rsvd"
     window_size = 300
+    complex_detection = False
+
+    # go through the scores
     scores = score_files[(algorithm, method, str(window_size))]
     results = []
     f1_results = []
+    score_heights = []
+    clasp_cover = []
+    clasp_f1 = []
     for idx, score in scores.items():
 
         # get the ground truth change points and the group
         gtdf_selected = gtdf.iloc[int(idx), :]
         cp_gt = gtdf_selected["change_points"]
+        cp_gt = cp_gt[(1.5*window_size <= cp_gt) & (cp_gt < score.shape[0]-window_size*5//6)]
         split = gtdf_selected["split"]
         if split == 'private': continue
 
         # get the detections
         cp_detected = detect_changepoints(score, window_size)
-        print(cp_detected)
-        print(cp_gt)
-        print()
+        print('Signal Nr.:', idx)
+        print('Detected CP:', cp_detected)
+        print('Ground truth CP:', cp_gt)
+
+        # save the score heights
+        score_heights.extend([score.loc[int(ele), "score"] for ele in cp_gt])
 
         # make the evaluation
         *_, f1_score, coverscore = evaluate_segmentation_algorithm(idx, score.shape[0], cp_gt, cp_detected)
+        print('Coverscore', coverscore)
+
+        # get the clasp detections
+        cp_clasp = pd.read_parquet(os.path.join("clasp", f"{idx}_clasp.parquet"))["detections"].to_numpy()
+        cp_clasp = cp_clasp[(1.5 * window_size <= cp_clasp) & (cp_clasp < score.shape[0]-window_size*5//6)]
+        print('Clasp:', cp_clasp)
+        *_, f1_score_clasp, coverscore_clasp = evaluate_segmentation_algorithm(idx, score.shape[0], cp_gt, cp_clasp)
+        clasp_cover.append(coverscore_clasp)
+        clasp_f1.append(f1_score_clasp)
+        print()
+
         results.append(coverscore)
         f1_results.append(f1_score)
     results = np.array(results)
     f1_results = np.array(f1_results)
+    score_heights = np.array(score_heights)
     print('Average Cover', results.mean(), f1_results.mean())
     print('Median Cover', np.median(results), np.median(f1_results))
+    print('Score Height', np.median(score_heights), np.mean(score_heights))
+    print()
+    clasp_cover = np.array(clasp_cover)
+    clasp_f1 = np.array(clasp_f1)
+    print('Clasp Cover', clasp_cover.mean(), clasp_f1.mean())
+    print('Clasp Median Cover', np.median(clasp_cover), np.median(clasp_f1))
 
 
 
